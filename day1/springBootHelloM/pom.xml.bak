@@ -7,8 +7,6 @@
     <groupId>cn.hncu</groupId>
     <artifactId>springBootHelloM</artifactId>
     <version>1.0-SNAPSHOT</version>
-    <!--这里影响的是将项目打成什么后缀的包-->
-    <packaging>war</packaging>
 
     <parent>
         <groupId>org.springframework.boot</groupId>
@@ -23,22 +21,5 @@
             <version>1.4.2.RELEASE</version>
         </dependency>
     </dependencies>
-
-    <build>
-        <plugins>
-            <!--下面是将应用打包发布需要增加的插件-->
-            <plugin>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>repackage</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
-    </build>
 
 </project>
