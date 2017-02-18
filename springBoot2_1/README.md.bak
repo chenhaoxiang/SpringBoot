@@ -1,300 +1,267 @@
-﻿这是我学习SpringBoot的入门系列哦，欢迎阅读。
+﻿怎么建立springboot项目就不再累赘介绍啦
 
-SpringBoot的简介我就不写一个篇章来介绍了，相信大家搜索一下，网上一大堆。
+#入口类和@SpringBootApplication
 
-首先，SpringBoot的推出不是用来替代Spirng的，而是精简Spring的配置的。也就是优化Spirng的。
+SpringBoot 通常有一个名为*Application的入口类，入口类里有一个main方法，这个main方法其实就是一个标准的Java应用的入口方法。
 
-下面直接上实例吧。
-环境配置:
-win7
-Intellij IDEA 使用的是2016 1.2以后的版本
-JDK1.8
-Maven 3.3.9
-Tomcat/8.5.6
+在main方法中使用SpringApplication.run(SpringBoot21Application.class, args),启动Spring Boot 应用项目。
 
-#创建项目工程
-
-使用IDEA新建一个SpringBoot项目。
-
-##第一种创建方式 -使用Spring Initializr的方式
-
-这种方式很简单。
-
-![](http://img.blog.csdn.net/20170122170532702?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvcXFfMjY1MjUyMTU=/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/SouthEast)
-
-注意这里的URL是: https://start.spring.io , 这个连接需要网络，用来查询Spring Boot的当前可用版本和组件列表！
-
-然后选择下一步。
-
-![](http://img.blog.csdn.net/20170122170846910?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvcXFfMjY1MjUyMTU=/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/SouthEast)
-
-注意这些地方的选择！
-
-然后点next。
-
-![](http://img.blog.csdn.net/20170122170935193?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvcXFfMjY1MjUyMTU=/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/SouthEast)
-
-在这里选择SpringBoot版本和SpringBoot组件！
-例如我选择了Web项目组件。
-
-点next
-
-![](http://img.blog.csdn.net/20170122171039274?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvcXFfMjY1MjUyMTU=/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/SouthEast)
-
-OK，这样就建出了SpringBoot的骨架了！
-![](http://img.blog.csdn.net/20170122171201946?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvcXFfMjY1MjUyMTU=/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/SouthEast)
-
-###SpringBootHelloApplication.java
+@SpringBootApplication是Spring Boot的核心注解，它是一个组合注解，其源码如下：
 
 ```
-package cn.hncu;
+//
+// Source code recreated from a .class file by IntelliJ IDEA
+// (powered by Fernflower decompiler)
+//
 
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
+package org.springframework.boot.autoconfigure;
 
-@SpringBootApplication
-public class SpringBootHelloApplication {
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Inherited;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+import org.springframework.boot.SpringBootConfiguration;
+import org.springframework.boot.autoconfigure.AutoConfigurationExcludeFilter;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.context.TypeExcludeFilter;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.FilterType;
+import org.springframework.context.annotation.ComponentScan.Filter;
+import org.springframework.core.annotation.AliasFor;
 
+@Target({ElementType.TYPE})
+@Retention(RetentionPolicy.RUNTIME)
+@Documented
+@Inherited
+@SpringBootConfiguration
+@EnableAutoConfiguration
+@ComponentScan(
+    excludeFilters = {        @Filter(
+            type = FilterType.CUSTOM,
+            classes = {TypeExcludeFilter.class}
+        ),         @Filter(
+            type = FilterType.CUSTOM,
+            classes = {AutoConfigurationExcludeFilter.class}
+        )}
+)
+public @interface SpringBootApplication {
+    @AliasFor(
+        annotation = EnableAutoConfiguration.class,
+        attribute = "exclude"
+    )
+    Class<?>[] exclude() default {};
+
+    @AliasFor(
+        annotation = EnableAutoConfiguration.class,
+        attribute = "excludeName"
+    )
+    String[] excludeName() default {};
+
+    @AliasFor(
+        annotation = ComponentScan.class,
+        attribute = "basePackages"
+    )
+    String[] scanBasePackages() default {};
+
+    @AliasFor(
+        annotation = ComponentScan.class,
+        attribute = "basePackageClasses"
+    )
+    Class<?>[] scanBasePackageClasses() default {};
+}
+
+```
+
+我们看简化后的：
+
+```
+@Target({ElementType.TYPE})
+@Retention(RetentionPolicy.RUNTIME)
+@Documented
+@Inherited
+@SpringBootConfiguration
+@EnableAutoConfiguration
+@ComponentScan
+public @interface SpringBootApplication {
+    Class<?>[] exclude() default {};
+    String[] excludeName() default {};
+}
+
+```
+@SpringBootApplication注解主要组合了@SpringBootConfiguration
+，@EnableAutoConfiguration，@ComponentScan；
+
+@SpringBootConfiguration也是一个组合注解，源码如下：
+```
+@Target({ElementType.TYPE})
+@Retention(RetentionPolicy.RUNTIME)
+@Documented
+@Configuration
+public @interface SpringBootConfiguration {
+}
+```
+其主要注解是Configuration注解。
+
+如果不使用@SpringBootApplication注解，则可以在入口类上直接使用@Configuration、@EnableAutoConfiguration、@ComponentScan。
+
+其中，@EnableAutoConfiguration让Spring Boot根据类路径中的jar包依赖为当前项目进行自动配置。
+
+例如：
+添加了spring-boot-starter-web依赖，会自动添加Tomcat和spring MVC的依赖，那么Spring Boot会对Tomcat和SpringMVC进行自动配置。
+
+又如：
+添加了spring-boot-starter-data-jpa依赖，SpringBoot会自动进行JPA相关的配置。
+
+Spring Boot会自动扫描@SpringBootApplication所在类的同级包以及下级包中的Bean（若为JPA项目还可以扫描标注@Entity的实体类）。
+
+建议入口类放置的位置在groupId+arctifactId组合的包名下。
+
+#关闭特定的自动配置
+
+通过上面的@SpringBootApplication的源码我们可以看出，关闭特定的自动配置应该使用@SpringBootApplication注解的exclude参数，例如：
+```
+@SpringBootApplication(exclude = {DataSourceAutoConfiguration.class})
+```
+
+#定制Banner
+
+##修改Banner
+
+在Spring Boot启动的时候会有一个默认启动图案，如下图：
+
+![](http://img.blog.csdn.net/20170217172504083?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvcXFfMjY1MjUyMTU=/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/SouthEast)
+
+我们可以在项目的src/main/resources下新建一个banner.txt。
+
+接下来，我们可以通过
+http://patorjk.com/software/taag 
+http://asciiset.com/figletserver.html
+http://www.askapache.com/online-tools/figlet-ascii/
+网站生成字符，比如敲入的为"CHX"，然后将网站生成的字符复制到banner.txt中。
+http://picascii.com/   图片转换为 ASCII 
+
+你自己进网站看了就晓得了。
+
+
+![](http://img.blog.csdn.net/20170217173359920?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvcXFfMjY1MjUyMTU=/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/SouthEast)
+
+这时再启动程序，图案已经变了，如下图：
+![](http://img.blog.csdn.net/20170217173506822?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvcXFfMjY1MjUyMTU=/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/SouthEast)
+
+这个文件还可以引用外部变量。有四个变量可以用到：
+
+```
+${application.version}  MANIFEST.MF文件中的版本号  
+${application.formatted-version} 上面的版本号前面加v后上括号  
+${spring-boot.version}    springboot的版本号  
+${spring-boot.formatted-version} springboot的版本号   
+```
+比如我在banner.txt中写了一行
+```
+::CHX::  (${spring-boot.version})
+```
+启动后显示就是
+```
+::CHX::  (1.5.1.RELEASE)
+```
+
+
+##关闭banner
+
+原main方法：
+
+```
 	public static void main(String[] args) {
-		SpringApplication.run(SpringBootHelloApplication.class, args);
+		SpringApplication.run(SpringBoot21Application.class, args);
 	}
-}
-```
-###pom.xml
-它自动生成的SpringBoot！注意，需要的包比较多，如果你以前没有那些包，可能下载需要一定时间，如果中途网络不好什么的，导致包下载不完全，那么解决办法就是把那个包删去，以及pom.xml中对应的语句也删去，然后再重新写到pom.xml中，重新下载对应的包！我就在这里被坑过一次！所以总是出现class找不到！
-```
-<?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-	<modelVersion>4.0.0</modelVersion>
-
-	<groupId>cn.hncu</groupId>
-	<artifactId>springboothello</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
-	<packaging>jar</packaging>
-
-	<name>springBoot-Hello</name>
-	<description>SpringBoot�HelloWord</description>
-
-	<parent>
-		<groupId>org.springframework.boot</groupId>
-		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>2.0.0.BUILD-SNAPSHOT</version>
-		<relativePath/> <!-- lookup parent from repository -->
-	</parent>
-
-	<properties>
-		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-		<java.version>1.8</java.version>
-	</properties>
-
-	<dependencies>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-web</artifactId>
-		</dependency>
-
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-test</artifactId>
-			<scope>test</scope>
-		</dependency>
-	</dependencies>
-
-	<build>
-		<plugins>
-			<plugin>
-				<groupId>org.springframework.boot</groupId>
-				<artifactId>spring-boot-maven-plugin</artifactId>
-			</plugin>
-		</plugins>
-	</build>
-
-	<repositories>
-		<repository>
-			<id>spring-snapshots</id>
-			<name>Spring Snapshots</name>
-			<url>https://repo.spring.io/snapshot</url>
-			<snapshots>
-				<enabled>true</enabled>
-			</snapshots>
-		</repository>
-		<repository>
-			<id>spring-milestones</id>
-			<name>Spring Milestones</name>
-			<url>https://repo.spring.io/milestone</url>
-			<snapshots>
-				<enabled>false</enabled>
-			</snapshots>
-		</repository>
-	</repositories>
-	<pluginRepositories>
-		<pluginRepository>
-			<id>spring-snapshots</id>
-			<name>Spring Snapshots</name>
-			<url>https://repo.spring.io/snapshot</url>
-			<snapshots>
-				<enabled>true</enabled>
-			</snapshots>
-		</pluginRepository>
-		<pluginRepository>
-			<id>spring-milestones</id>
-			<name>Spring Milestones</name>
-			<url>https://repo.spring.io/milestone</url>
-			<snapshots>
-				<enabled>false</enabled>
-			</snapshots>
-		</pluginRepository>
-	</pluginRepositories>
-
-</project>
 ```
 
-##第二种创建方式-使用创建Maven的方式
-
-这种方式就是需要我们自己手动多写一些代码！
-
-![](http://img.blog.csdn.net/20170122171714214?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvcXFfMjY1MjUyMTU=/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/SouthEast)
-
-在这里我们选择Maven 的创建方式。在这里不做过多解释了。。。
-
-![](http://img.blog.csdn.net/20170122171931878?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvcXFfMjY1MjUyMTU=/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/SouthEast)
-
-![](http://img.blog.csdn.net/20170122171942582?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvcXFfMjY1MjUyMTU=/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/SouthEast)
-
-###现在的pom.xml是这样的
+1、main里的内容修改为：
 
 ```
-<?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
-
-    <groupId>cn.hncu</groupId>
-    <artifactId>springBootHelloM</artifactId>
-    <version>1.0-SNAPSHOT</version>
-    
-
-</project>
+	public static void main(String[] args) {
+		SpringApplication application = new SpringApplication(SpringBoot21Application.class);
+		application.setBannerMode(Banner.Mode.OFF);
+		application.run(args);
+	}
 ```
+Banner.Mode 有三个值 CONSOLE, LOG, OFF, 默认为 CONSOLE, 可以用 OFF 关闭 Banner 显示, 或是 LOG 让 Banner 在应用 log 中显示. 可支持用属性 spring.main.banner-mode=off 来控制. 
 
-###修改为
+2、使用 Fluent builder API
 
 ```
-<?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
-
-    <groupId>cn.hncu</groupId>
-    <artifactId>springBootHelloM</artifactId>
-    <version>1.0-SNAPSHOT</version>
-
-    <parent>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-starter-parent</artifactId>
-        <version>1.4.2.RELEASE</version>
-    </parent>
-
-    <dependencies>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId>
-            <version>1.4.2.RELEASE</version>
-        </dependency>
-    </dependencies>
-
-</project>
-```
-![](http://img.blog.csdn.net/20170122172601153?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvcXFfMjY1MjUyMTU=/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/SouthEast)
-这个不会帮你建好SpringBoot的骨架！所以要自己建
-
-![](http://img.blog.csdn.net/20170122172944845?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvcXFfMjY1MjUyMTU=/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/SouthEast)
-
-###SpringBootHelloApplication
-
-```
-package cn.hncu;
-
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-
-/**
- * Created with IntelliJ IDEA.
- * User: 陈浩翔.
- * Date: 2017/1/22.
- * Time: 下午 5:25.
- * Explain:
- */
-@SpringBootApplication
-public class SpringBootHelloApplication {
-    public static void main(String[] args) {
-        SpringApplication.run(SpringBootHelloApplication.class,args);
-    }
-}
-
+	public static void main(String[] args) {
+SpringApplicationBuilder(SpringBoot21Application.class)
+				.bannerMode(Banner.Mode.OFF)
+				.run(args);
+	}
 ```
 
-使用注解@SpringBootApplication来标注它是一个SpringBoot应用，main方法使它成为了一个主程序。将在应用启动的时候执行！
+#Spring Boot的配置文件
 
-这main方法里面的SpringBootHelloApplication这个类名，必须是使用了 @SpringBootApplication这个注解的类的类名哦。
+Spring Boot 使用一个全局的配置文件 application.properties或application.yml，放置在src/main/resoures目录或者类路径的/config下。
 
-###Hello
+Spring Boot不仅支持常规的properties配置文件，还支持yaml语言的配置文件。
+yaml是以数据为中心的语言，在配置数据的时候具有面向对象的特征。
 
-```
-package cn.hncu;
+Spring Boot 的全局配置文件的作用是对一些默认的配置值进行修改。
 
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+##简单示例
 
-/**
- * Created with IntelliJ IDEA.
- * User: 陈浩翔.
- * Date: 2017/1/22.
- * Time: 下午 5:27.
- * Explain:
- */
-@RestController
-public class Hello {
-    @RequestMapping("/")
-    String home(){
-        return "你好，世界";
-    }
-}
+我们可以将Tomcat的默认端口8080修改为10090，并将默认的访问路径"/"修改为"/helloboot".
+
+可以在application.properties中添加：
 
 ```
-
-这个就是springMvc的注解配置了。
-
-等会就是直接访问:http://localhost:8080/ 然后看网页上的显示。
-
-然后，我们直接运行那个main方法!
-
-![](http://img.blog.csdn.net/20170122173510097?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvcXFfMjY1MjUyMTU=/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/SouthEast)
-
-![](http://img.blog.csdn.net/20170122173534932?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvcXFfMjY1MjUyMTU=/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/SouthEast)
-
-```
-2017-01-22 17:32:23.270  INFO 19888 --- [           main] s.b.c.e.t.TomcatEmbeddedServletContainer : Tomcat initialized with port(s): 8080 (http)
-2017-01-22 17:32:23.322  INFO 19888 --- [           main] o.apache.catalina.core.StandardService   : Starting service Tomcat
-2017-01-22 17:32:23.334  INFO 19888 --- [           main] org.apache.catalina.core.StandardEngine  : Starting Servlet Engine: Apache Tomcat/8.5.6
+server.port=10090
+server.context-path=/helloboot
 ```
 
-使用的Tomcat的访问端口和版本，都可以在输出的日志中看到！
+如果是application.yml 则添加的是：
 
-然后我们访问网址:
+```
+server:
+	port: 10090
+	contextpath: /helloboot
+```
 
-http://localhost:8080/
+#starter pom
 
-![](http://img.blog.csdn.net/20170122173738676?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvcXFfMjY1MjUyMTU=/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/SouthEast)
+Spring Boot 为我们提供了简化企业级开发绝大多数场景的starter pom，只要使用了应用场景所需要的starter pom，相关的技术配置将会消除，就可以得到Spring Boot为我们提供的自动配置的Bean。
 
+##Spring Boot 推荐的基础 POM 文件 
 
-我也是第一次使用SpringBoot，怎么说这个呢，现在给我的感觉就是简单很多了，以前部署Spring-Web项目是需要很多步骤的，现在变得特别简单，难怪现在SpringBoot越来越火了啊。确实感觉，小型项目架一个SpringBoot要省很多事。
+| 名称 | 描述|
+| spring-boot-starter  | 核心 POM，包含自动配置支持、日志库和对 YAML 配置文件的支持。 | 
+| spring-boot-starter-amqp | 通过 spring-rabbit 支持 AMQP。 | 
+| spring-boot-starter-aop  | 包含 spring-aop 和 AspectJ 来支持面向切面编程（AOP）。  | 
+| spring-boot-starter-batch  | 支持 Spring Batch，包含 HSQLDB。  | 
+| spring-boot-starter-data-jpa  | 包含 spring-data-jpa、spring-orm 和 Hibernate 来支持 JPA。  | 
+|  spring-boot-starter-data-mongodb | 包含 spring-data-mongodb 来支持 MongoDB。  | 
+| spring-boot-starter-data-rest  |  通过 spring-data-rest-webmvc 支持以 REST 方式暴露 Spring Data 仓库。 | 
+| spring-boot-starter-jdbc  |  支持使用 JDBC 访问数据库。 | 
+| spring-boot-starter-security  | 包含 spring-security。  | 
+| spring-boot-starter-test  |  包含常用的测试所需的依赖，如 JUnit、Hamcrest、Mockito 和 spring-test 等。 | 
+| spring-boot-starter-velocity  |  支持使用 Velocity 作为模板引擎。 | 
+|  spring-boot-starter-web |  支持 Web 应用开发，包含 Tomcat 和 spring-mvc。 | 
+|  spring-boot-starter-websocket |  支持使用 Tomcat 开发 WebSocket 应用。 | 
+| spring-boot-starter-ws  | 支持 Spring Web Services。  | 
+|  spring-boot-starter-actuator | 添加适用于生产环境的功能，如性能指标和监测等功能。  | 
+|  spring-boot-starter-remote-shell  | 添加远程 SSH 支持。  | 
+|  spring-boot-starter-jetty  | 使用 Jetty 而不是默认的 Tomcat 作为应用服务器。  | 
+| spring-boot-starter-log4j  | 添加 Log4j 的支持。  | 
+|  spring-boot-starter-logging  | 使用 Spring Boot 默认的日志框架 Logback。  | 
+|  spring-boot-starter-tomcat  | 使用 Spring Boot 默认的 Tomcat 作为应用服务器。  | 
 
-我用的是Maven的方式创建的哦。
-因为用Spring Initializr方式创建的话，就更简单！pom.xml和SpringBoot的入口程序都不用你写！
+还有一些第三方的starter pom，就不一一介绍了，有兴趣的可以自行搜索一下。
 
-我会继续学下去，然后把自己的体验写出来，加油↖(^ω^)↗，谢谢大家支持.
+#使用xml配置
+
+Spring Boot提倡零配置，即无xml配置，但是在实际项目中，可能有一些特殊要求你必须使用xml配置，这时我们可以通过Spring 提供的@ImportResource来加载xml配置，例如：
+
+```
+@ImportResource({"classpath:some-context.xml","classpath:another-context.xml"})
+```
+

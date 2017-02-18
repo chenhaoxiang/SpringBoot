@@ -1,4 +1,5 @@
-﻿怎么建立springboot项目就不再累赘介绍啦
+﻿
+怎么建立springboot项目就不再累赘介绍啦
 
 #入口类和@SpringBootApplication
 
@@ -234,6 +235,7 @@ Spring Boot 为我们提供了简化企业级开发绝大多数场景的starter 
 ##Spring Boot 推荐的基础 POM 文件 
 
 | 名称 | 描述|
+| ------------- |:-------------:| 
 | spring-boot-starter  | 核心 POM，包含自动配置支持、日志库和对 YAML 配置文件的支持。 | 
 | spring-boot-starter-amqp | 通过 spring-rabbit 支持 AMQP。 | 
 | spring-boot-starter-aop  | 包含 spring-aop 和 AspectJ 来支持面向切面编程（AOP）。  | 
@@ -264,4 +266,3 @@ Spring Boot提倡零配置，即无xml配置，但是在实际项目中，可能
 ```
 @ImportResource({"classpath:some-context.xml","classpath:another-context.xml"})
 ```
-
