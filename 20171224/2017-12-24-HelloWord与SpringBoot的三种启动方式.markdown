@@ -87,22 +87,10 @@ cd target
 执行：
 java -jar hello-0.0.1-SNAPSHOT.jar
 
-# 源代码下载地址：
-<blockquote cite='陈浩翔'>
-GITHUB源码下载地址:<strong>【<a href='chenhaoxiang' target='_blank'>点我进行下载</a>】</strong>
-</blockquote>
+本篇只是简单的创建了一下SpringBoot项目.  
+与三种启动方式  
 
 # 源代码下载地址：
-GITHUB源码下载地址:【**[点我进行下载](http://chenhaoxiang.cn "点我进行下载")**】
-
-
-本文章由<a href="chenhaoxiang" target='_blank'>[谙忆]</a>编写， 所有权利保留。 
-欢迎转载，分享是进步的源泉。
 <blockquote cite='陈浩翔'>
-<p background-color='#D3D3D3'>转载请注明出处：<a href='http://chenhaoxiang.cn'><font color="green">http://chenhaoxiang.cn</font></a><br><br>
-本文源自<strong>【<a href='http://chenhaoxiang.cn' target='_blank'>人生之旅_谙忆的博客</a>】</strong></p>
+GITHUB源码下载地址:<strong>【<a href='https://github.com/chenhaoxiang/SpringBoot/tree/master/20171224/code/hello' target='_blank'>点我进行下载</a>】</strong>
 </blockquote>
-
-<a href="chenhaoxiang" target='_blank'>谙忆</a>
-
-http://chenhaoxiang.cn/2017/03/27/0738/ 有个链接没改！！！！！！！csdn的
