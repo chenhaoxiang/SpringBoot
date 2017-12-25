@@ -6,7 +6,7 @@ comments: true
 categories: SpringBoot
 tags: [SpringBoot]
 keyword: 陈浩翔, 谙忆, SpringBoot
-description:  项目属性配置
+description:  SpringBoot的项目属性配置,自定义配置
 ---
 
 
@@ -224,5 +224,5 @@ java -jar target/hello-0.0.1-SNAPSHOT.jar --spring.profiles.active=prod
 
 # 源代码下载地址：
 <blockquote cite='陈浩翔'>
-GITHUB源码下载地址:<strong>【<a href='https://github.com/chenhaoxiang/SpringBoot/tree/master/20171224/code/hello' target='_blank'>点我进行下载</a>】</strong>
+GITHUB源码下载地址:<strong>【<a href='https://github.com/chenhaoxiang/SpringBoot/tree/master/20171225/code/hello' target='_blank'>点我进行下载</a>】</strong>
 </blockquote>
