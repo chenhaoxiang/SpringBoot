@@ -1,0 +1,163 @@
+---
+layout: post
+title: "【SpringBoot】部分注解介绍"
+date: 2017-12-28 20:22:54 +0800
+comments: true
+categories: SpringBoot
+tags: [SpringBoot]
+keyword: 陈浩翔, 谙忆, SpringBoot, 注解
+description:  SpringBoot的注解Controller注解，RequestMapping注解等
+---
+
+#Controller注解
+用来处理Http请求的  
+用在类上面  
+
+#RequestMapping注解
+用来配置Url的映射  
+可在类或者方法上  
+在类上时，该注解的映射作用在该类的所有方法上  
+需要两个地址都访问该注解的方法时，可以将地址用逗号隔开，例如:
+```java
+@RequestMapping(value = {"/people","people2"},method = RequestMethod.GET)
+public People people() {//返回的是对象的JSON字符串
+    return people;
+}
+```
+
+另外还有@GetMapping,@PostMapping,@PutMapping等组合注解  
+@GetMapping(value="/test")其实就是相当于
+@RequestMapping(value = "/test",method = RequestMethod.GET)  
+可以看一下GetMapping注解的实现:  
+```java
+...
+@Target({ElementType.METHOD})
+@Retention(RetentionPolicy.RUNTIME)
+@Documented
+@RequestMapping(
+    method = {RequestMethod.GET}
+)
+public @interface GetMapping {
+    @AliasFor(
+        annotation = RequestMapping.class
+    )
+    String name() default "";
+
+   ...
+}
+```
+可以看到，GetMapping注解继承了RequestMapping注解，并且对于RequestMapping注解中的method属性有一个GET的赋值  
+所以囖，一目明了。  
+
+
+#RestController注解
+Spring4之后新加的注解，相当于@Controller和@ResponseBody注解的配合使用。  
+可以直接返回json字符串  
+比如上一篇博客使用的，直接在Controller返回一个类对象，在前台看到的是json字符串  
+可以看下该注解的源码:
+```java
+@Target({ElementType.TYPE})
+@Retention(RetentionPolicy.RUNTIME)
+@Documented
+@Controller
+@ResponseBody
+public @interface RestController {
+    String value() default "";
+}
+
+```
+
+
+#PathVariable注解
+获取url中的参数。  
+例如:  
+```java
+    @GetMapping(value = "/getId/{id}")
+    public Integer getPeople(@PathVariable(value = "id")Integer ida) {
+        return ida;
+    }
+```
+我特意将变量命名为ida以区分url和注解中的id。  
+
+
+#RequestParam注解
+获取请求参数的值  
+例如:  
+```java
+    @GetMapping(value = "/getName")
+    public String getPeople(@RequestParam(value = "name")String nameStr) {
+        return nameStr;
+    }
+```
+不做过多解释啦，学过spring和springmvc的朋友早就懂了的。  
+其实RequestParam注解也可以省略不写的，这个时候，url传进来的参数就需要和变量名对应上了  
+
+
+还可以给参数设置默认值，可以这样使用:
+```java
+    /**
+     * @RequestParam
+     * required-false  表示不是必须传的
+     * defaultValue  这个就是参数的默认值，但是注意，这里的值必须是字符串
+     * @param nameStr
+     * @return
+     */
+    @GetMapping(value = "/say")
+    public String say(@RequestParam(value = "name",required = false,defaultValue = "0") String nameStr) {
+        return nameStr;
+    }
+```
+
+这篇挺简单的,没有什么多的东西，就没啥代码了，我在后面把那个Controller类贴出来。  
+建议初学的先从前面的该类博客看  
+```java
+package cn.chenhaoxiang;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+
+/**
+ * Created with IntelliJ IDEA.
+ * User: 陈浩翔.
+ * Date: 2017/12/25.
+ * Time: 下午 9:44.
+ * Explain:
+ */
+@RestController
+public class HelloController {
+    @Autowired
+    private People people;
+    @RequestMapping(value = {"/people","people2"},method = RequestMethod.GET)
+    public People people() {//返回的是对象的JSON字符串
+        return people;
+    }
+
+    @GetMapping(value = "/getId/{id}")
+    public Integer getId(@PathVariable(value = "id")Integer ida) {
+        return ida;
+    }
+
+    @GetMapping(value = "/getName")
+    public String getName(@RequestParam(value = "name")String nameStr) {
+        return nameStr;
+    }
+
+    @GetMapping(value = "/getNameStr")
+    public String getNameStr(String nameStr) {//url传进来的参数需要和变量名对应上
+        return nameStr;
+    }
+
+    /**
+     * @RequestParam
+     * required-false  表示不是必须传的
+     * defaultValue  这个就是参数的默认值，但是注意，这里的值必须是字符串
+     * @param nameStr
+     * @return
+     */
+    @GetMapping(value = "/say")
+    public String say(@RequestParam(value = "name",required = false,defaultValue = "0") String nameStr) {
+        return nameStr;
+    }
+
+}
+```
