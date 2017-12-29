@@ -1,0 +1,264 @@
+---
+layout: post
+title: "【SpringBoot】数据库操作"
+date: 2017-12-28 20:22:54 +0800
+comments: true
+categories: SpringBoot
+tags: [SpringBoot]
+keyword: 陈浩翔, 谙忆, SpringBoot, 数据库操作
+description:  SpringBoot的数据库操作
+---
+
+在Spring-Boot进行数据库操作，我们需要用到Spring-Data-Jpa。 
+
+不多介绍Spring-Data-Jpa是什么了，直接用实例来说明。想了解Spring-Data-Jpa是什么的，直接百度即可  
+
+在下面的实例中，我们进行实现简单的数据库操作，也就是增删改查  
+
+Controller
+```java
+package cn.chenhaoxiang.controller;
+
+import cn.chenhaoxiang.dao.PeopleDao;
+import cn.chenhaoxiang.entity.People;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+/**
+ * Created with IntelliJ IDEA.
+ * User: 陈浩翔.
+ * Date: 2017/12/28.
+ * Time: 下午 9:20.
+ * Explain:
+ */
+@RestController
+public class IndexController {
+
+    @Autowired
+    private PeopleDao peopleDao;//因为逻辑相对简单，直接在Controller调用dao了，实际开发中请勿这样
+
+    /**
+     * 获取所有的人的数据
+     * @return
+     */
+    @GetMapping(value = "/peoples")
+    public List<People> getPeople(){
+        return peopleDao.findAll();//一句SQL都没写，很方便
+    }
+
+    /**
+     * 新增一个对象
+     * @param people
+     * @return
+     */
+    @PostMapping(value = "/add")
+    public People peopleAdd(People people){
+        //@RequestParam(value = "people")  直接传类的时候，建议不要使用RequestParam注解
+        //当然，你可以选择每一个参数都写上，但没必要，更多的时候是直接传类对象，注意url的参数名和类中属性名对上
+        return peopleDao.save(people);
+    }
+
+    /**
+     * 更新对象
+     * @param people
+     * @return
+     */
+    @PostMapping(value = "/edit")
+    public People peopleEdit(People people){
+        //注意，修改就必须带上ID了，也就是主键。save方法会根据有没有主键来判断是修改还是新增
+        //更新需要带上全部参数，否则没有值的参数会赋值为NULL
+        return peopleDao.save(people);
+    }
+
+    /**
+     * 查询对象
+     * @param id  根据ID
+     * @return
+     */
+    @GetMapping(value = "/select/{id}")
+    public People select(@PathVariable("id") Integer id){
+        return peopleDao.findOne(id);//没查到的时候，返回null  在前台接收的是空
+    }
+
+    /**
+     * 删除对象
+     * @param id  根据ID
+     * @return
+     */
+    @GetMapping(value = "/delete/{id}")
+    public void delete(@PathVariable("id") Integer id){
+        peopleDao.delete(id);//删除的返回是空...
+    }
+
+    /**
+     * 根据名字查询People
+     * @param name
+     * @return
+     */
+    @PostMapping(value = "/selectByName")
+    public List<People> selectByName(@RequestParam("name") String name){
+        return peopleDao.findByName(name);
+    }
+
+    /**
+     * 根据名字和年龄查询People
+     * @param name
+     * @return
+     */
+    @PostMapping(value = "/selectByNameAndAge")
+    public List<People> selectByNameAndAge(String name,Integer age){
+        return peopleDao.findByNameAndAge(name,age);
+    }
+
+    /**
+     * 根据名字和地址查询People
+     * @param name
+     * @return
+     */
+    @PostMapping(value = "/selectByNameAndAddress")
+    public List<People> selectByNameAnAddress(String name,String address){
+        return peopleDao.findByNameAndAddress(name,address);
+    }
+
+}
+
+```
+
+DAO
+```java
+package cn.chenhaoxiang.dao;
+
+import cn.chenhaoxiang.entity.People;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.repository.query.Param;
+
+import java.util.List;
+
+/**
+ * Created with IntelliJ IDEA.
+ * User: 陈浩翔.
+ * Date: 2017/12/28.
+ * Time: 下午 10:44.
+ * Explain:
+ */
+public interface PeopleDao extends JpaRepository<People,Integer>{//实体类，id的类型
+
+    /**
+     * 根据名字查询
+     * @param name
+     * @return
+     */
+    List<People> findByName(String name);
+
+    /**
+     * 根据名字和年龄查询
+     * @param name
+     * @return
+     */
+    List<People> findByNameAndAge(String name,Integer age);
+    /**
+     * 根据名字和地址查询
+     * @param name
+     * @return
+     */
+    List<People> findByNameAndAddress(String name,String address);
+    //可以看出来，这个写查询有规律的
+
+}
+
+```
+
+实体类:
+```java
+package cn.chenhaoxiang.entity;
+
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
+
+/**
+ * Created with IntelliJ IDEA.
+ * User: 陈浩翔.
+ * Date: 2017/12/28.
+ * Time: 下午 9:20.
+ * Explain:
+ */
+@Entity // 实体类注解
+public class People {
+
+    @Id //主键
+    @GeneratedValue //自增长
+    private Integer id;
+
+    private String name;
+
+    private Double score;
+
+    private String address;
+
+    private Integer age;
+
+    //在有的教程中说必须要写无参构造函数，经过实践证明，不写无参构造函数也是可以生成表的
+//    public People() {
+//    }
+
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public Double getScore() {
+        return score;
+    }
+
+    public void setScore(Double score) {
+        this.score = score;
+    }
+
+    public String getAddress() {
+        return address;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
+    }
+
+    public Integer getAge() {
+        return age;
+    }
+
+    public void setAge(Integer age) {
+        this.age = age;
+    }
+
+    @Override
+    public String toString() {
+        return "People{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                ", score=" + score +
+                ", address='" + address + '\'' +
+                ", age=" + age +
+                '}';
+    }
+}
+```
+
+
+# 源代码下载地址：
+<blockquote cite='陈浩翔'>
+GITHUB源码下载地址:<strong>【<a href='chenhaoxiang' target='_blank'>点我进行下载</a>】</strong>
+</blockquote>
