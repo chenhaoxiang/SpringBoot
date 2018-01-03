@@ -1,0 +1,26 @@
+spring:
+  profiles:
+    active: dev
+#    数据库配置
+  datasource:
+      driver-class-name: com.mysql.jdbc.Driver
+      url: jdbc:mysql://127.0.0.1:3306/dbpeople
+      username: root
+      password: 1234
+  jpa:
+      hibernate:
+        ddl-auto: update
+        #配置ddl-auto: create 表示每次运行都创建新的实体类对应空表，如果原来有表，会先删除
+        # ddl-auto: update  加载hibernate时根据实体类model创建数据库表，这时表名的依据是@Entity注解的值或者@Table注解的值。sessionFactory关闭表不会删除，且下一次启动会根据实体model更新结构或者有新的实体类会创建新的表。
+        # create-drop  每次加载hibernate时根据model类生成表，但是sessionFactory一关闭，表就自动删除，下一次启动会重新创建。
+        # validate：启动时验证表的结构，不一致的话会报错，不会创建表
+        # none：启动时不做任何操作
+      show-sql: true
+      #显示sql语句
+  http:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+
+#在这里配置，无论选择dev还是prod配置文件都是会用到这里的

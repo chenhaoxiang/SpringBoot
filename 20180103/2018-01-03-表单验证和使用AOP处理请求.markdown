@@ -1,0 +1,166 @@
+---
+layout: post
+title: "【SpringBoot】表单验证和使用AOP处理请求"
+date: 2018-01-03 22:22:54 +0800
+comments: true
+categories: SpringBoot
+tags: [SpringBoot]
+keyword: 陈浩翔, 谙忆, SpringBoot, AOP, 表单验证
+description:  表单验证和使用AOP处理请求,统一处理请求日志
+---
+
+# 表单验证
+项目是上篇文章继续的。  
+
+首先说下要干嘛，我们需要拦截People年龄在18岁以下的  
+
+首先是在People上的年龄增加一个注解  
+```java
+@Min(value = 18,message = "年龄必须大于18")//message为提示  20180103
+private Integer age;
+```
+
+在这里，我们拦截新增的方法  
+也就是IndexController类中的peopleAdd方法  
+```java
+/**
+ * 新增一个对象
+ * 增加一个功能，如果年龄大于18，就不让添加进数据库 20180103
+ * @param people
+ * @return
+ */
+@PostMapping(value = "/add")
+public People peopleAdd(@Valid People people, BindingResult bindingResult){//@Valid 注解表示使用数据校验 People类中对年龄进行了限制 ,验证返回结果会在bindingResult对象中 20180103
+    //@RequestParam(value = "people")  直接传类的时候，建议不要使用RequestParam注解
+    //当然，你可以选择每一个参数都写上，但没必要，更多的时候是直接传类对象，注意url的参数名和类中属性名对上
+
+    if(bindingResult.hasErrors()){//验证出现错误
+        System.out.println("验证错误信息:"+bindingResult.getFieldError().getDefaultMessage());
+        return null;
+    }
+
+    return peopleDao.save(people);
+}
+```
+
+这样我们就实现了年龄的拦截，当年龄没有大于等于18，则bindingResult.hasErrors()返回的是true  
+
+没有什么新的知识点，springMVC都学过的  
+与Min注解相对应的还有@Max注解  
+
+
+
+# 使用AOP处理请求
+
+AOP是一种编程范式，与语言无关，是一种程序设计思想  
+下面列出三种程序设计思想：  
+AOP-面向切面 Aspect Oriented Programming    
+OOP-面向对象 Object Oriented Programming  
+POP-面向过程 Procedure Oriented Programming  
+
+面向过程到面向对象的区别  
+其实就是思考点的不同  
+我们用下雨来说一个例子  
+
+面向过程的思想会这样做:  
+假如下雨了，我打开了雨伞  
+
+在面向对象的思想中，应该这么做:
+比如用Java，首先会实现一个叫天气的对象，给天气对象赋予一个下雨的动作  
+至于我，也会实现一个我的对象，给我这个对象赋予一个打伞的动作  
+在Java里面，这些动作可以称为方法  
+
+上面这两种思想其实就是"换个角度看世界，换个姿势处理问题"  
+
+AOP的通用思想是:  
+将通用逻辑从具体的业务逻辑中分离出来  
+
+## 统一处理请求日志
+以记录每一个http请求来写实例  
+
+首先去pom.xml添加aop的依赖
+```java
+<!-- AOP的依赖-->
+<dependency>
+	<groupId>org.springframework.boot</groupId>
+	<artifactId>spring-boot-starter-aop</artifactId>
+</dependency>
+```
+
+增加一个aop的类：  
+```java
+package cn.chenhaoxiang.aspect;
+
+import org.aspectj.lang.JoinPoint;
+import org.aspectj.lang.annotation.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
+
+import javax.servlet.http.HttpServletRequest;
+
+
+/**
+ * Created with IntelliJ IDEA.
+ * User: 陈浩翔.
+ * Date: 2018/1/3.
+ * Time: 下午 10:10.
+ * Explain:
+ */
+@Aspect
+@Component
+public class HttpAspect {
+
+    private final static Logger logger = LoggerFactory.getLogger(HttpAspect.class);//使用org.slf4j.Logger,
+    /**
+     * 定义切面
+     */
+    @Pointcut("execution(public * cn.chenhaoxiang.controller.IndexController.*(..))")
+    public void httpLog(){
+    }
+    /**
+     * 在方法执行之前执行
+     */
+//    @Before("execution(public * cn.chenhaoxiang.controller.IndexController.*(..))")//*在这里表示匹配所有的方法， (..) 表示任意参数，包含没有参数的
+    @Before("httpLog()")
+    public void before(JoinPoint joinPoint){
+        logger.info("before");
+        ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        HttpServletRequest request = attributes.getRequest();
+        //url
+        logger.info("url={}",request.getRequestURI());//会把request.getRequestURI()的值赋值到{}中去
+        //method  请求方式
+        logger.info("method={}",request.getMethod());
+        //ip
+        logger.info("ip={}",request.getRemoteAddr());
+        //请求的类方法
+        logger.info("class_method={}",joinPoint.getSignature().getDeclaringTypeName()+"."+joinPoint.getSignature().getName());
+        //参数
+        logger.info("args={}",joinPoint.getArgs());
+    }
+
+//    @After("execution(public * cn.chenhaoxiang.controller.IndexController.*(..))")//这个和上面的Before里面的值重复了，我们可以换种方式来实现
+    @After("httpLog()")
+    public void after(){
+        logger.info("after");
+    }
+
+    @AfterReturning(returning = "object",pointcut = "httpLog()")
+    public void afterReturning(Object object){//object为方法返回的参数
+        logger.info("response={}",object);//toString，不然输出的对象会是地址
+        //最好是不写object.toString(),直接输出object，这样的话，就不用担心object空指针了。
+    }
+
+}
+```
+
+基本上就是这些了。本章就到这儿了，该睡觉了，现在还在集体宿舍，键盘声比较大、  
+以后出去住就可以学习到半夜了，哈哈  
+
+
+# 源代码下载地址：
+<blockquote cite='陈浩翔'>
+GITHUB源码下载地址:<strong>【<a href='https://github.com/chenhaoxiang/SpringBoot/tree/master/20180103/code/hello' target='_blank'>点我进行下载</a>】</strong>
+</blockquote>
