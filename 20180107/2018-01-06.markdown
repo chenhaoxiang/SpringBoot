@@ -1,0 +1,566 @@
+---
+layout: post
+title: "【SpringBoot】Http请求统一异常(返回数据)处理与单元测试"
+date: 2018-01-07 17:05:54 +0800
+comments: true
+categories: SpringBoot
+tags: [SpringBoot]
+keyword: 陈浩翔, 谙忆, SpringBoot, AOP, 统一异常处理
+description:  统一异常处理与单元测试
+---
+
+# 对返回数据格式的统一
+
+首先规定一下错误的输出格式:
+```java
+{	
+	"code": 1,
+	"msg": "提示",
+	"data": null
+}
+```
+data是一个对象  
+
+首先定义一个http请求返回的类
+```java
+package cn.chenhaoxiang.common.entity;
+
+/**
+ * Created with IntelliJ IDEA.
+ * User: 陈浩翔.
+ * Date: 2018/1/7.
+ * Time: 下午 2:17.
+ * Explain: http请求返回的最外层对象
+ */
+public class Result<T> {
+
+    /**
+     * 错误码
+     */
+    private Integer code;
+    /**
+     * 提示信息
+     */
+    private String msg;
+
+    /**
+     * 返回的具体内容
+     */
+    private T data;
+
+    public Integer getCode() {
+        return code;
+    }
+
+    public void setCode(Integer code) {
+        this.code = code;
+    }
+
+    public String getMsg() {
+        return msg;
+    }
+
+    public void setMsg(String msg) {
+        this.msg = msg;
+    }
+
+    public T getData() {
+        return data;
+    }
+
+    public void setData(T data) {
+        this.data = data;
+    }
+}
+
+```
+
+然后可以定义一个工具类:
+```java
+package cn.chenhaoxiang.utils;
+
+import cn.chenhaoxiang.common.entity.Result;
+
+/**
+ * Created with IntelliJ IDEA.
+ * User: 陈浩翔.
+ * Date: 2018/1/7.
+ * Time: 下午 2:45.
+ * Explain:
+ */
+public class ResultUtil {
+
+    public static Result success(Object object){
+        Result result = new Result();
+        result.setCode(1);
+        result.setMsg("成功");
+        result.setData(object);
+        return  result;
+    }
+    public static Result successNoData(){
+        return  success(null);
+    }
+    public static Result error(Integer code,String msg){
+        Result result = new Result();
+        result.setCode(code);
+        result.setMsg(msg);
+        return  result;
+    }
+
+}
+```
+这个ResultUtil中的方法，其实写在BaseController中也挺不错的  
+
+People实体类中:
+```java
+    @NotBlank(message = "名字不能为空")//String 不是 null 且去除两端空白字符后的长度（trimmed length）大于 0
+    private String name;
+
+    @NotNull(message = "分数必传")//CharSequence, Collection, Map 和 Array 对象不能是 null, 但可以是空集（size = 0）
+    private Double score;
+
+    private String address;
+
+    @Min(value = 18,message = "年龄必须大于18")//message为提示  20180103
+    private Integer age;
+```
+属性上的注解，都是限制条件，注释上有说明  
+
+在Controller中使用的时候:
+```java
+    /**
+     * 新增一个对象
+     * 增加一个功能，如果年龄大于18，就不让添加进数据库 20180103
+     * @param people
+     * @return
+     */
+    @PostMapping(value = "/add")
+    public Result<People> peopleAdd(@Valid People people, BindingResult bindingResult){//@Valid 注解表示使用数据校验 People类中对年龄进行了限制 ,验证返回结果会在bindingResult对象中 20180103
+        //@RequestParam(value = "people")  直接传类的时候，建议不要使用RequestParam注解
+        //当然，你可以选择每一个参数都写上，但没必要，更多的时候是直接传类对象，注意url的参数名和类中属性名对上
+        if(bindingResult.hasErrors()){//验证出现错误
+            return ResultUtil.error(0,bindingResult.getFieldError().getDefaultMessage());
+        }
+        return ResultUtil.success( peopleDao.save(people));
+    }
+
+```
+访问，看结果:  
+ 
+![](https://i.imgur.com/qPR8fqp.png)  
+
+失败的只演示这个，再演示一个添加成功的  
+![](https://i.imgur.com/FnU40BQ.png)  
+
+这样完成了对返回数据格式的统一
+
+# 对不同结果统一返回处理
+获取分数判断  
+如果分数小于60，返回"不及格"  
+分数大于60且小于80，返回"良好"  
+
+下面来看代码吧  
+在Service层的实现类中
+```java
+    /**
+     * 往往业务有点复杂，不能直接返回String，比如在这里
+     * @param id
+     */
+    @Override
+    public void getScore(Integer id) throws Exception {
+        People people = peopleDao.findOne(id);
+        Double score = people.getScore();
+        if(score<60){
+            //返回 "不及格"
+            throw new PeopleException(ResultEnum.FLUNK);
+        }else if(score>=60 && score<80 ){
+            //返回 "良好"
+            throw new PeopleException(ResultEnum.WELL);
+        }
+        //前面的只是作为校验，也就是条件，条件满足后才有后面的操作
+        //如果分数大于80，则给他进行另外的操作,这个时候就不好返回字符串了
+
+        //有的可能用数字来标志，返回1，2，3等等，然后在Controller再判断，这样是可以达到效果，但是代码写起来很别扭，在service中判断一次，controller还需要再判断一次
+        // 而且返回1，2，3都是自己标记的，假如这个标志多了呢，是不是很麻烦
+        //这个时候，统一异常处理就派上用处了
+    }
+
+```
+
+自定义枚举ResultEnum  
+```java
+package cn.chenhaoxiang.enums;
+
+/**
+ * Created with IntelliJ IDEA.
+ * User: 陈浩翔.
+ * Date: 2018/1/7.
+ * Time: 下午 3:31.
+ * Explain:
+ */
+public enum ResultEnum {
+    UNKONW_ERROR(-1,"未知错误"),
+    ERROR(0,"失败"),
+    SUCCESS(1,"成功"),
+    FLUNK(100,"不及格"),
+    WELL(101,"良好")
+    ;
+
+    ResultEnum(Integer code, String msg) {
+        this.code = code;
+        this.msg = msg;
+    }
+
+    private Integer code;
+    private  String msg;
+
+    public Integer getCode() {
+        return code;
+    }
+
+    public String getMsg() {
+        return msg;
+    }
+}
+
+```
+ 
+
+自定义异常类PeopleException  
+```java
+package cn.chenhaoxiang.exception;
+
+import cn.chenhaoxiang.enums.ResultEnum;
+
+/**
+ * Created with IntelliJ IDEA.
+ * User: 陈浩翔.
+ * Date: 2018/1/7.
+ * Time: 下午 3:18.
+ * Explain:
+ */
+public class PeopleException extends RuntimeException {//不要继承Exception ，Spring只对你的异常是RuntimeException的才会进行事务回滚
+
+    private Integer code;
+
+    public PeopleException(ResultEnum resultEnum) {
+        super(resultEnum.getMsg());
+        this.code = resultEnum.getCode();
+    }
+
+    public PeopleException(Integer code,String message) {
+        super(message);//父类本身就有message
+        this.code = code;
+    }
+
+    public Integer getCode() {
+        return code;
+    }
+
+    public void setCode(Integer code) {
+        this.code = code;
+    }
+}
+```
+
+
+异常捕获  统一异常返回格式
+```java
+package cn.chenhaoxiang.handle;
+
+import cn.chenhaoxiang.common.entity.Result;
+import cn.chenhaoxiang.enums.ResultEnum;
+import cn.chenhaoxiang.exception.PeopleException;
+import cn.chenhaoxiang.utils.ResultUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.web.bind.annotation.ControllerAdvice;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+/**
+ * Created with IntelliJ IDEA.
+ * User: 陈浩翔.
+ * Date: 2018/1/7.
+ * Time: 下午 3:13.
+ * Explain:异常捕获  统一异常返回格式
+ */
+@ControllerAdvice
+public class ExceptionHandle {
+
+    private final static Logger logger = LoggerFactory.getLogger(ExceptionHandle.class);
+
+    @ExceptionHandler(value = Exception.class)//声明需要捕获的异常类 - 写成PeopleException，就是只会捕获PeopleException异常了
+    @ResponseBody //由于返回浏览器那边是json格式，就需要这个
+    public Result handle(Exception e){
+        if(e instanceof PeopleException){
+            PeopleException peopleException = (PeopleException) e;
+            return ResultUtil.error(peopleException.getCode(),peopleException.getMessage());
+        }else {
+            logger.error("[系统异常]-{}",e);
+            return ResultUtil.error(ResultEnum.UNKONW_ERROR);
+        }
+    }
+}
+```
+固定返回格式，避免逻辑在一个地方处理，另一个地方重复处理，我们用异常来处理  
+将code和message固定成枚举，来统一管理  
+
+
+# 单元测试
+测试对任何项目来说是必不可少的  
+
+测试Service中的findOne方法
+第一种方式，可以自己去test目录下写测试类  
+```java
+package cn.chenhaoxiang;
+
+import cn.chenhaoxiang.entity.People;
+import cn.chenhaoxiang.service.PeopleService;
+import org.junit.Assert;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.junit4.SpringRunner;
+
+/**
+ * Created with IntelliJ IDEA.
+ * User: 陈浩翔.
+ * Date: 2018/1/7.
+ * Time: 下午 3:52.
+ * Explain:
+ */
+@RunWith(SpringRunner.class)//表示在测试环境中跑
+@SpringBootTest//表示将启动整个spring 的工程
+public class PeopleServiceTest {
+    @Autowired
+    private PeopleService peopleService;
+    @Test
+    public void findOneTest(){
+        People people = peopleService.findOne(7);
+        //使用断言
+        Assert.assertEquals(new Integer(20),people.getAge());
+    }
+}
+
+```
+
+第二种方式，如果你是使用的IDEA这个工具，可以直接这样    
+PeopleService接口的findOne方法上右键，出现如下的  
+选择go to，然后点击test  
+![](https://i.imgur.com/9cYV6uq.png)  
+
+因为我已经用方式一创建了一个测试方法，没事，可以再创建一个演示一下  
+![](https://i.imgur.com/i60ozCs.png)  
+
+选择需要测试的方法  
+![](https://i.imgur.com/X9HEINI.png)  
+也就是勾上你需要测试的方法  
+
+点击ok，会给你在test目录下创建如下的类  
+```java
+package cn.chenhaoxiang.service;
+
+import org.junit.Test;
+
+import static org.junit.Assert.*;
+
+/**
+ * Created with IntelliJ IDEA.
+ * User: 陈浩翔.
+ * Date: 2018/1/7.
+ * Time: 下午 4:04.
+ * Explain:
+ */
+public class PeopleServiceTest {
+    @Test
+    public void findOne() throws Exception {
+    }
+}
+```
+然后你进行添加类注解  
+```java
+@RunWith(SpringRunner.class)//表示在测试环境中跑
+@SpringBootTest//表示将启动整个spring 的工程
+```
+和注入接口  
+```java
+    @Autowired
+    private PeopleService peopleService;
+```
+其他的就类似方式一了，只是相对于方式一，少写了一点代码，对应的包，类，方法名都给你建好了。  
+
+## 对Controller测试
+我们对controller的获取所有人的方法进行测试，也就是测试
+```java
+    /**
+     * 获取所有的人的数据
+     * @return
+     */
+    @GetMapping(value = "/peoples")
+    public List<People> getPeople(){
+        logger.info("getPeople");
+        return peopleDao.findAll();//一句SQL都没写，很方便
+    }
+
+```
+我们在IDEA中使用方式二，右键go to的方式进行  
+
+首先我们相对与之前的service测试需要多加一个@AutoConfigureMockMvc注解  
+
+```java
+package cn.chenhaoxiang.controller;
+
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
+
+import static org.junit.Assert.*;
+
+/**
+ * Created with IntelliJ IDEA.
+ * User: 陈浩翔.
+ * Date: 2018/1/7.
+ * Time: 下午 4:09.
+ * Explain:
+ */
+@RunWith(SpringRunner.class)
+@SpringBootTest
+@AutoConfigureMockMvc //Controller测试的，需要是用这个注解
+public class IndexControllerTest {
+//    @Autowired
+//    private IndexController indexController;
+//    @Test
+//    public void getPeople1() throws Exception {
+//        indexController.getPeople();//这样只是对方法进行了测试
+//        //我们想用url进行测试，而且可以进行post或者get方法
+//    }
+    @Autowired
+    private MockMvc mvc;
+    @Test
+    public void getPeople() throws Exception {
+        mvc.perform(MockMvcRequestBuilders.get("/peoples"))//如果是post，就是调用post方法
+                .andExpect(MockMvcResultMatchers.status().isOk());//对返回的状态码进行判断
+//        .andExpect(MockMvcResultMatchers.content().string("a"))//对返回值进行判断，这里是200
+    }
+    //当进行打包的时候，会运行所有的单元测试方法，如果有失败，就会出现打包失败
+
+    //如果打包的时候希望跳过单元测试，则打包命令为
+    // mvn clean package -Damven.test.skip=true
+
+}
+```
+可以在测试输出中看到结果的  
+![](https://i.imgur.com/re62Kws.png)    
+
+然后测试一下post请求，并带参数的
+```java
+    /**
+     * post测试，并带参数
+     * @throws Exception
+     */
+    @Test
+    public void peopleEdit() throws Exception {
+        //发送请求
+        ResultActions resultActions = mvc.perform(MockMvcRequestBuilders.post("/edit").param("id","6")
+                .param("name","测试Controller")
+                .param("score","20.00")
+                .param("age","29"))//如果是post，就是调用post方法
+                .andExpect(MockMvcResultMatchers.status().isOk());//对返回的状态码进行判断
+        MvcResult mvcResult = resultActions.andReturn();
+        String result = mvcResult.getResponse().getContentAsString();
+        System.out.println("客户端获得反馈数据:" + result);
+    }
+```
+传递的是People参数，在这里我们传参不要直接传People对象或者该对象的json，应该对每个属性都用param赋值传  
+
+
+完整的Controller测试类
+```java
+package cn.chenhaoxiang.controller;
+
+import cn.chenhaoxiang.entity.People;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
+import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.ResultActions;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
+
+import static org.junit.Assert.*;
+
+/**
+ * Created with IntelliJ IDEA.
+ * User: 陈浩翔.
+ * Date: 2018/1/7.
+ * Time: 下午 4:09.
+ * Explain:
+ */
+@RunWith(SpringRunner.class)
+@SpringBootTest
+@AutoConfigureMockMvc //Controller测试的，需要是用这个注解
+public class IndexControllerTest {
+//    @Autowired
+//    private IndexController indexController;
+//    @Test
+//    public void getPeople1() throws Exception {
+//        indexController.getPeople();//这样只是对方法进行了测试
+//        //我们想用url进行测试，而且可以进行post或者get方法
+//    }
+    @Autowired
+    private MockMvc mvc;
+    @Test
+    public void getPeople() throws Exception {
+        ResultActions resultActions = mvc.perform(MockMvcRequestBuilders.get("/peoples"))//如果是post，就是调用post方法
+                .andExpect(MockMvcResultMatchers.status().isOk());//对返回的状态码进行判断,这个isOK是200
+//        .andExpect(MockMvcResultMatchers.content().string("a"))//对返回值进行判断
+
+        MvcResult mvcResult = resultActions.andReturn();
+        String result = mvcResult.getResponse().getContentAsString();
+        System.out.println("客户端获得反馈数据:" + result);
+    }
+    //当进行打包的时候，会运行所有的单元测试方法，如果有失败，就会出现打包失败
+
+    //如果打包的时候希望跳过单元测试，则打包命令为
+    // mvn clean package -Damven.test.skip=true
+
+    /**
+     * post测试，并带参数
+     * @throws Exception
+     */
+    @Test
+    public void peopleEdit() throws Exception {
+        //发送请求
+        ResultActions resultActions = mvc.perform(MockMvcRequestBuilders.post("/edit").param("id","6")
+                .param("name","测试Controller")
+                .param("score","20.00")
+                .param("age","29"))//如果是post，就是调用post方法
+                .andExpect(MockMvcResultMatchers.status().isOk());//对返回的状态码进行判断
+        MvcResult mvcResult = resultActions.andReturn();
+        String result = mvcResult.getResponse().getContentAsString();
+        System.out.println("客户端获得反馈数据:" + result);
+    }
+
+}
+```
+
+
+# 源代码下载地址：
+<blockquote cite='陈浩翔'>
+GITHUB源码下载地址:<strong>【<a href='https://github.com/chenhaoxiang/SpringBoot/tree/master/20180107/code/hello' target='_blank'>点我进行下载</a>】</strong>
+</blockquote>
